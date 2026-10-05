@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AS Schaerbeek 5 - LFFS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="bg-red-700 border-b border-red-800 shadow-lg sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-red-700 font-black p-2 rounded-lg tracking-wider text-sm shadow">
+                    P5 LFFS
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-white tracking-wide">AS SCHAERBEEK 5</h1>
+                    <p class="text-xs text-red-200">Bruxelles-Brabant Wallon</p>
+                </div>
+            </div>
+            <!-- Bouton secret visible uniquement avec #coach -->
+            <div id="secretAdminContainer" class="hidden">
+                <button onclick="toggleAdmin()" class="bg-black/50 text-white text-xs px-3 py-2 rounded-lg font-semibold border border-white/20 flex items-center space-x-1">
+                    <i class="fa-solid fa-lock-open text-emerald-400"></i>
+                    <span>Mode Coach Actif</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="bg-slate-900 border-b border-slate-800">
+        <div class="max-w-4xl mx-auto flex justify-around">
+            <button onclick="switchTab('matches')" id="tab-matches" class="flex-1 py-3 text-center text-sm font-bold text-red-500 border-b-2 border-red-500 transition">
+                <i class="fa-solid fa-futbol mr-1"></i> Matchs & Stats
+            </button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="flex-1 py-3 text-center text-sm font-medium text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-chart-bar mr-1"></i> Tableau Récap'
+            </button>
+            <button onclick="switchTab('admin')" id="tab-admin" class="flex-1 py-3 text-center text-sm font-medium text-slate-400 hover:text-white transition hidden">
+                <i class="fa-solid fa-pen-to-square mr-1"></i> Gérer
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-4xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+
+        <!-- SECTION MATCHS -->
+        <div id="section-matches" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold tracking-tight text-white flex items-center">
+                    <span class="bg-red-600 w-2.5 h-6 rounded-full mr-2"></span> Calendrier & Résultats de la Saison
+                </h2>
+                <span id="matchCountBadge" class="text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full font-medium">0 match(s)</span>
+            </div>
+            <div id="matchesList" class="space-y-6"></div>
+        </div>
+
+        <!-- SECTION TABLEAU RECAP -->
+        <div id="section-stats" class="space-y-6 hidden">
+            <h2 class="text-xl font-bold tracking-tight text-white flex items-center">
+                <span class="bg-red-600 w-2.5 h-6 rounded-full mr-2"></span> Tableau Récapitulatif - Joueurs
+            </h2>
+            <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-xs text-slate-400 uppercase">
+                            <th class="py-3 px-4">Joueur</th>
+                            <th class="py-3 px-4 text-center text-blue-400">👕 Matchs Joués</th>
+                            <th class="py-3 px-4 text-center">⚽ Buts</th>
+                            <th class="py-3 px-4 text-center">👟 Passes D</th>
+                            <th class="py-3 px-4 text-center">⭐ MVP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody" class="divide-y divide-slate-800/60 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECTION ADMIN / GESTION -->
+        <div id="section-admin" class="space-y-6 hidden bg-slate-900/80 p-6 rounded-2xl border border-slate-800 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h2 class="text-lg font-bold text-white flex items-center">
+                    <i class="fa-solid fa-toolbox text-red-500 mr-2"></i> Espace Coach - Saisie & Effectif
+                </h2>
+                <button onclick="addNewMatchForm()" class="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-2 rounded-lg font-bold transition flex items-center space-x-1 shadow">
+                    <i class="fa-solid fa-plus"></i> <span>Ajouter un match</span>
+                </button>
+            </div>
+
+            <div class="bg-emerald-950/40 border border-emerald-800/50 rounded-xl p-3 text-xs text-emerald-200">
+                <strong>Connecté à Supabase :</strong> tes modifications s'enregistrent en direct pour toute l'équipe[cite: 10].
+            </div>
+            <div id="adminMatchesFormList" class="space-y-6"></div>
+
+            <div class="pt-6 border-t border-slate-800 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-md font-bold text-white flex items-center">
+                        <i class="fa-solid fa-users text-blue-400 mr-2"></i> Gestion des Joueurs & Matchs Joués
+                    </h3>
+                    <button onclick="addNewPlayerPrompt()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center space-x-1">
+                        <i class="fa-solid fa-user-plus"></i> <span>Ajouter un joueur</span>
+                    </button>
+                </div>
+                <div id="adminPlayerMatchesList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="saveData()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-check"></i> <span>Enregistrer toutes les modifications</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 text-center text-xs text-slate-500 mt-10">
+        AS Schaerbeek 5 • Championnat LFFS Bruxelles-Brabant Wallon
+    </footer>
+
+    <!-- SUPABASE CLIENT -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- SCRIPT LOGIQUE -->
+    <script>
+        const defaultMatches = [
+            {
+                id: 1,
+                opponent: "WHITE EAGLES BXL",
+                homeScore: 3,
+                awayScore: 6,
+                date: "Journée 1",
+                scorers: "Amadou, Marwane, Hugo",
+                assists: "Amadou",
+                mvp: "Amadou"
+            },
+            {
+                id: 2,
+                opponent: "MARINE AUDERGHEM 7",
+                homeScore: 1,
+                awayScore: 4,
+                date: "Journée 2",
+                scorers: "Karim P3",
+                assists: "Marwane",
+                mvp: "Faris"
+            },
+            {
+                id: 3,
+                opponent: "UNION FT BXL",
+                homeScore: 3,
+                awayScore: 9,
+                date: "Journée 3",
+                scorers: "Amadou, Amadou, Isaac",
+                assists: "Anis",
+                mvp: "Amadou"
+            },
+            {
+                id: 4,
+                opponent: "GLADIATOR EVERE",
+                homeScore: 3,
+                awayScore: 2,
+                date: "Journée 4",
+                scorers: "Amadou, Anis, Chams",
+                assists: "Amadou, Jamal",
+                mvp: "Anis"
+            },
+            {
+                id: 5,
+                opponent: "FC SOKOL BXL 3",
+                homeScore: 4,
+                awayScore: 2,
+                date: "Journée 5",
+                scorers: "Anis, Anis, Isaac, Marwane",
+                assists: "Souhayl, Anis",
+                mvp: "Anis"
+            }
+        ];
+
+        const defaultPlayerMatches = {
+            "Amadou": 5,
+            "Anis": 3,
+            "Marwane": 5,
+            "Isaac": 4,
+            "Hugo": 3,
+            "Chams": 3,
+            "Karim P3": 1,
+            "Reda": 3,
+            "Souhayl": 3,
+            "Faris": 5,
+            "Jamal": 4,
+            "Jaber": 0
+        };
+
+        let appData = {
+            matches: defaultMatches,
+            playerMatches: defaultPlayerMatches
+        };
+
+        const SUPABASE_URL = 'https://txqxksbpfsxmuvktenwv.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_jt2_Xq-vGsmECH1Q5wakXg_k2B6n';
+
+        const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const DATA_ROW_ID = 1;
+
+        async function loadDataFromCloud() {
+            const { data, error } = await dbClient
+                .from('team_data')
+                .select('matches, player_matches')
+                .eq('id', DATA_ROW_ID)
+                .maybeSingle();
+
+            if (!error && data && data.matches && data.matches.length > 0) {
+                appData.matches = data.matches;
+                appData.playerMatches = data.player_matches || defaultPlayerMatches;
+            }
+        }
+
+        async function saveDataToCloud() {
+            const { error } = await dbClient
+                .from('team_data')
+                .upsert({
+                    id: DATA_ROW_ID,
+                    matches: appData.matches,
+                    player_matches: appData.playerMatches,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (error) {
+                alert('Erreur lors de l’enregistrement : ' + error.message);
+                return false;
+            }
+            return true;
+        }
+
+        if(window.location.hash === '#coach') {
+            document.getElementById('secretAdminContainer').classList.remove('hidden');
+        }
+
+        function render() {
+            document.getElementById('matchCountBadge').innerText = appData.matches.length + ' match(s)';
+
+            const adminTab = document.getElementById('tab-admin');
+            if(window.location.hash === '#coach') {
+                adminTab.classList.remove('hidden');
+            } else {
+                adminTab.classList.add('hidden');
+            }
+
+            const listEl = document.getElementById('matchesList');
+            listEl.innerHTML = appData.matches.map((m, index) => `
+                <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-lg">
+                    <div class="bg-slate-800/50 px-4 py-2 border-b border-slate-800 flex justify-between items-center text-xs font-semibold text-slate-400">
+                        <span>${m.date || 'Journée ' + (index + 1)}</span>
+                        <span class="text-red-400 font-bold uppercase tracking-wider">LFFS P5</span>
+                    </div>
+                    
+                    <div class="p-6 flex items-center justify-between">
+                        <div class="flex-1 text-right pr-4">
+                            <span class="font-extrabold text-base md:text-xl text-white block">AS Schaerbeek 5</span>
+                        </div>
+                        <div class="bg-slate-950 px-5 py-3 rounded-xl border border-slate-800 flex items-center space-x-3 shadow-inner">
+                            <span class="text-2xl md:text-3xl font-black text-white">${m.homeScore}</span>
+                            <span class="text-slate-600 font-bold">-</span>
+                            <span class="text-2xl md:text-3xl font-black text-slate-300">${m.awayScore}</span>
+                        </div>
+                        <div class="flex-1 text-left pl-4">
+                            <span class="font-extrabold text-base md:text-xl text-slate-300 block">${m.opponent || 'Adversaire'}</span>
+                        </div>
+                    </div>
+
+                    <div class="px-6 pb-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm border-t border-slate-800/60 pt-4">
+                        <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50">
+                            <span class="text-xs font-bold text-red-400 block mb-1"><i class="fa-solid fa-futbol mr-1"></i> Buteurs</span>
+                            <span class="text-slate-200 font-medium">${m.scorers || 'Aucun'}</span>
+                        </div>
+                        <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50">
+                            <span class="text-xs font-bold text-amber-400 block mb-1"><i class="fa-solid fa-shoe-prints mr-1"></i> Passes D</span>
+                            <span class="text-slate-200 font-medium">${m.assists || 'Aucune'}</span>
+                        </div>
+                        <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/50">
+                            <span class="text-xs font-bold text-emerald-400 block mb-1"><i class="fa-solid fa-star mr-1"></i> MVP</span>
+                            <span class="text-slate-200 font-bold">${m.mvp || 'Non désigné'}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            generateStatsTable();
+
+            const adminListEl = document.getElementById('adminMatchesFormList');
+            adminListEl.innerHTML = appData.matches.map((m, index) => `
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span class="font-bold text-sm text-red-400">Match #${index + 1} (${m.date})</span>
+                        <button onclick="deleteMatch(${index})" class="text-red-500 hover:text-red-400 text-xs font-semibold px-2 py-1 rounded bg-red-950/50 border border-red-900/50">
+                            <i class="fa-solid fa-trash mr-1"></i> Supprimer
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Journée</label>
+                            <input type="text" id="date_${index}" value="${m.date || ''}" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Adversaire</label>
+                            <input type="text" id="opp_${index}" value="${m.opponent || ''}" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Buts AS Schaerbeek 5</label>
+                            <input type="number" id="hs_${index}" value="${m.homeScore}" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Buts Adversaire</label>
+                            <input type="number" id="as_${index}" value="${m.awayScore}" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Buteurs</label>
+                            <input type="text" id="scorers_${index}" value="${m.scorers || ''}" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Passes Décisives</label>
+                            <input type="text" id="assists_${index}" value="${m.assists || ''}" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">MVP</label>
+                            <input type="text" id="mvp_${index}" value="${m.mvp || ''}" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            const adminPlayerListEl = document.getElementById('adminPlayerMatchesList');
+            adminPlayerListEl.innerHTML = Object.keys(appData.playerMatches).map(p => `
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex
