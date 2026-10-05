@@ -494,15 +494,22 @@
         }
 
         async function saveData() {
-            appData.matches.matches.forEach((m, index) => {}); // safeguard
             appData.matches.forEach((m, index) => {
-                m.date = document.getElementById(`date_${index}`).value;
-                m.opponent = document.getElementById(`opp_${index}`).value;
-                m.homeScore = parseInt(document.getElementById(`hs_${index}`).value) || 0;
-                m.awayScore = parseInt(document.getElementById(`as_${index}`).value) || 0;
-                m.scorers = document.getElementById(`scorers_${index}`).value;
-                m.assists = document.getElementById(`assists_${index}`).value;
-                m.mvp = document.getElementById(`mvp_${index}`).value;
+                const dateEl = document.getElementById(`date_${index}`);
+                const oppEl = document.getElementById(`opp_${index}`);
+                const hsEl = document.getElementById(`hs_${index}`);
+                const asEl = document.getElementById(`as_${index}`);
+                const scorersEl = document.getElementById(`scorers_${index}`);
+                const assistsEl = document.getElementById(`assists_${index}`);
+                const mvpEl = document.getElementById(`mvp_${index}`);
+
+                if(dateEl) m.date = dateEl.value;
+                if(oppEl) m.opponent = oppEl.value;
+                if(hsEl) m.homeScore = parseInt(hsEl.value) || 0;
+                if(asEl) m.awayScore = parseInt(asEl.value) || 0;
+                if(scorersEl) m.scorers = scorersEl.value;
+                if(assistsEl) m.assists = assistsEl.value;
+                if(mvpEl) m.mvp = mvpEl.value;
             });
 
             Object.keys(appData.playerMatches).forEach(p => {
