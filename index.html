@@ -344,4 +344,196 @@
 
             const adminPlayerListEl = document.getElementById('adminPlayerMatchesList');
             adminPlayerListEl.innerHTML = Object.keys(appData.playerMatches).map(p => `
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <span class="text-sm font-bold text-white">${p}</span>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" id="pm_${p}" value="${appData.playerMatches[p]}" class="w-16 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-sm text-center text-white">
+                        <button onclick="deletePlayer('${p}')" class="text-red-400 hover:text-red-300 px-2 py-1 text-xs" title="Supprimer">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generateStatsTable() {
+            let stats = {};
+            Object.keys(appData.playerMatches).forEach(p => {
+                stats[p] = { matches: appData.playerMatches[p], goals: 0, assists: 0, mvp: 0 };
+            });
+
+            function addStat(name, type, count = 1) {
+                if(!name || name.trim() === '' || name.toLowerCase().includes('non')) return;
+                let cleanName = name.trim();
+                if(!stats[cleanName]) {
+                    stats[cleanName] = { matches: 0, goals: 0, assists: 0, mvp: 0 };
+                }
+                stats[cleanName][type] += count;
+            }
+
+            appData.matches.forEach(m => {
+                if(m.scorers) {
+                    m.scorers.split(',').forEach(s => {
+                        let match = s.trim().match(/(.*?)(?:\((\d+)\))?$/);
+                        if(match && match[1]) addStat(match[1].trim(), 'goals', match[2] ? parseInt(match[2]) : 1);
+                    });
+                }
+                if(m.assists) {
+                    m.assists.split(',').forEach(s => {
+                        let match = s.trim().match(/(.*?)(?:\((\d+)\))?$/);
+                        if(match && match[1]) addStat(match[1].trim(), 'assists', match[2] ? parseInt(match[2]) : 1);
+                    });
+                }
+                if(m.mvp) {
+                    m.mvp.split(',').forEach(s => addStat(s.trim(), 'mvp', 1));
+                }
+            });
+
+            const tbody = document.getElementById('statsTableBody');
+            let players = Object.keys(stats);
+            if(players.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-500">Aucune statistique.</td></tr>`;
+                return;
+            }
+            players.sort((a, b) => stats[b].goals - stats[a].goals);
+            
+            tbody.innerHTML = players.map(p => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="py-3 px-4 font-bold text-white">${p}</td>
+                    <td class="py-3 px-4 text-center font-bold text-blue-400">${stats[p].matches}</td>
+                    <td class="py-3 px-4 text-center font-extrabold text-red-500">${stats[p].goals}</td>
+                    <td class="py-3 px-4 text-center font-bold text-amber-400">${stats[p].assists}</td>
+                    <td class="py-3 px-4 text-center font-bold text-emerald-400">${stats[p].mvp}</td>
+                </tr>
+            `).join('');
+        }
+
+        function addNewPlayerPrompt() {
+            let name = prompt("Nom du nouveau joueur :");
+            if(name && name.trim() !== "") {
+                let cleanName = name.trim();
+                if(!appData.playerMatches[cleanName]) {
+                    appData.playerMatches[cleanName] = 0;
+                    render();
+                    switchTab('admin');
+                } else {
+                    alert("Ce joueur existe déjà !");
+                }
+            }
+        }
+
+        function deletePlayer(playerName) {
+            if(confirm(`Supprimer le joueur ${playerName} ?`)) {
+                delete appData.playerMatches[playerName];
+                render();
+                switchTab('admin');
+            }
+        }
+
+        function toggleAdmin() {
+            if(window.location.hash === '#coach') {
+                window.location.hash = '';
+            } else {
+                window.location.hash = '#coach';
+            }
+            render();
+            switchTab(window.location.hash === '#coach' ? 'admin' : 'matches');
+        }
+
+        function switchTab(tabName) {
+            const matchesSection = document.getElementById('section-matches');
+            const statsSection = document.getElementById('section-stats');
+            const adminSection = document.getElementById('section-admin');
+            
+            const tabMatches = document.getElementById('tab-matches');
+            const tabStats = document.getElementById('tab-stats');
+            const tabAdmin = document.getElementById('tab-admin');
+
+            matchesSection.classList.add('hidden');
+            statsSection.classList.add('hidden');
+            adminSection.classList.add('hidden');
+
+            tabMatches.className = "flex-1 py-3 text-center text-sm font-medium text-slate-400 hover:text-white transition";
+            tabStats.className = "flex-1 py-3 text-center text-sm font-medium text-slate-400 hover:text-white transition";
+            if(window.location.hash === '#coach') tabAdmin.className = "flex-1 py-3 text-center text-sm font-medium text-slate-400 hover:text-white transition";
+
+            if(tabName === 'matches') {
+                matchesSection.classList.remove('hidden');
+                tabMatches.className = "flex-1 py-3 text-center text-sm font-bold text-red-500 border-b-2 border-red-500 transition";
+            } else if(tabName === 'stats') {
+                statsSection.classList.remove('hidden');
+                tabStats.className = "flex-1 py-3 text-center text-sm font-bold text-red-500 border-b-2 border-red-500 transition";
+                generateStatsTable();
+            } else if(tabName === 'admin' && window.location.hash === '#coach') {
+                adminSection.classList.remove('hidden');
+                tabAdmin.className = "flex-1 py-3 text-center text-sm font-bold text-red-500 border-b-2 border-red-500 transition";
+            }
+        }
+
+        function addNewMatchForm() {
+            appData.matches.push({
+                id: Date.now(),
+                opponent: "Nouvel Adversaire",
+                homeScore: 0,
+                awayScore: 0,
+                date: "Journée " + (appData.matches.length + 1),
+                scorers: "",
+                assists: "",
+                mvp: ""
+            });
+            render();
+            switchTab('admin');
+        }
+
+        function deleteMatch(index) {
+            if(confirm("Supprimer ce match ?")) {
+                appData.matches.splice(index, 1);
+                render();
+                switchTab('admin');
+            }
+        }
+
+        async function saveData() {
+            appData.matches.matches.forEach((m, index) => {}); // safeguard
+            appData.matches.forEach((m, index) => {
+                m.date = document.getElementById(`date_${index}`).value;
+                m.opponent = document.getElementById(`opp_${index}`).value;
+                m.homeScore = parseInt(document.getElementById(`hs_${index}`).value) || 0;
+                m.awayScore = parseInt(document.getElementById(`as_${index}`).value) || 0;
+                m.scorers = document.getElementById(`scorers_${index}`).value;
+                m.assists = document.getElementById(`assists_${index}`).value;
+                m.mvp = document.getElementById(`mvp_${index}`).value;
+            });
+
+            Object.keys(appData.playerMatches).forEach(p => {
+                let el = document.getElementById(`pm_${p}`);
+                if(el) {
+                    appData.playerMatches[p] = parseInt(el.value) || 0;
+                }
+            });
+
+            const saved = await saveDataToCloud();
+            if (saved) {
+                alert("✅ Modifications enregistrées et synchronisées en direct pour toute l'équipe !");
+                window.location.hash = '';
+                render();
+                switchTab('matches');
+            }
+        }
+
+        (async function initApp() {
+            await loadDataFromCloud();
+            render();
+            if(window.location.hash === '#coach') {
+                switchTab('admin');
+            }
+            setInterval(async () => {
+                if(window.location.hash !== '#coach') {
+                    await loadDataFromCloud();
+                    generateStatsTable();
+                }
+            }, 4000);
+        })();
+    </script>
+</body>
+</html>
